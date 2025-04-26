@@ -1,0 +1,13 @@
+﻿  spatial_audio.cpp
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,98): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,98): warning C4244:         with
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,98): warning C4244:         [
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,98): warning C4244:             T=float
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,98): warning C4244:         ]
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,77): warning C4244: 'argument': conversion from 'int' to 'T', possible loss of data
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,77): warning C4244:         with
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,77): warning C4244:         [
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,77): warning C4244:             T=float
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(119,77): warning C4244:         ]
+C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\spatial_audio.cpp(140,24): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  spatial_audio.vcxproj -> C:\Users\halil\Documents\My Documents\Job\My studies\C++\spatial_audio\x64\Debug\spatial_audio.exe
