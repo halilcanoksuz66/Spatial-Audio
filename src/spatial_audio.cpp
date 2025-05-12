@@ -4,42 +4,53 @@
 #include <string>
 #include <sstream>
 
-// Uçak sınıfı
+/////////////////////////////////////////////////////////
+//                      Airplane                       //
+/////////////////////////////////////////////////////////
+// Uçak sınıfı: Ekranda yatay eksende hareket eden     //
+// ve sesi Doppler etkisine göre ayarlanan bir nesne. //
+/////////////////////////////////////////////////////////
 class Airplane {
 public:
-    sf::Vector2f position;
-    sf::Vector2f velocity;
-    float speed = 100.0f; // Piksel/saniye (hız)
+    sf::Vector2f position;       // Uçağın pozisyonu (x, y)
+    sf::Vector2f velocity;       // Yön vektörü (normalleştirilmiş)
+    float speed = 100.0f;        // Uçağın hızı (piksel/saniye)
 
+    // Kurucu: başlangıç pozisyonu verilir
     Airplane(float startX, float startY) {
         position = sf::Vector2f(startX, startY);
-        velocity = sf::Vector2f(1.0f, 0.0f); // Başlangıç hızı
+        velocity = sf::Vector2f(1.0f, 0.0f); // Sağ yöne doğru birim vektör
     }
 
+    // Pozisyonu güncelle (deltaTime'e göre ilerleme)
     void update(float deltaTime) {
         position += velocity * speed * deltaTime;
 
+        // Ekranı geçtiğinde başa dön (loop etkisi)
         if (position.x > 1000) {
             position.x = -100;
         }
     }
 };
 
+/////////////////////////////////////////////////////////
+//             Doppler Pitch Hesaplama Fonksiyonu      //
+/////////////////////////////////////////////////////////
+// Sesin pitch değerini Doppler etkisine göre hesaplar.//
+// Sesin frekansı yaklaşırken artar, uzaklaşırken azalır//
+/////////////////////////////////////////////////////////
 float calculateDopplerPitch(sf::Vector2f airplanePos, sf::Vector2f airplaneVelocity, float airplaneSpeed, sf::Vector2f listenerPos) {
-    float speedOfSound = 343.0f;
+    const float speedOfSound = 343.0f; // Havanın içindeki ses hızı (m/s olarak varsayıyoruz)
 
-    // Uçağın dinleyiciye göre x eksenindeki farkı
-    float distance = listenerPos.x - airplanePos.x;
+    float distance = listenerPos.x - airplanePos.x; // x eksenindeki mesafe farkı
+    float relativeVelocity = airplaneVelocity.x * airplaneSpeed; // Uçağın x yönündeki hız bileşeni
 
-    // Uçağın yönü * hızı → göreli hız
-    float relativeVelocity = airplaneVelocity.x * airplaneSpeed;
-
-    // Yaklaşıyor mu uzaklaşıyor mu kontrol et
+    // Uçak yaklaşırken distance ve velocity çarpımı pozitif olur
     bool isApproaching = (distance * relativeVelocity) > 0;
-    // distance ve velocity aynı işaretliyse: yaklaşıyor
 
     float pitch = 1.0f;
 
+    // Pitch değişimini hesapla (yaklaşıyorsa artar, uzaklaşıyorsa azalır)
     if (relativeVelocity != 0) {
         if (isApproaching) {
             pitch = speedOfSound / (speedOfSound - fabs(relativeVelocity));
@@ -49,109 +60,117 @@ float calculateDopplerPitch(sf::Vector2f airplanePos, sf::Vector2f airplaneVeloc
         }
     }
 
-    // Doppler etkisini yumuşatmak için
-    float dopplerStrength = 0.3f; // 0 = hiç etki yok, 1 = tam etki
+    // Doppler etkisini yumuşatma faktörü (tam etki istemiyorsak)
+    float dopplerStrength = 0.3f; // 0 = etki yok, 1 = tam fiziksel model
     float rawPitch = pitch;
     pitch = 1.0f + (rawPitch - 1.0f) * dopplerStrength;
 
-    // Pitch değerini sınırlıyoruz
+    // Pitch değerini sınırla (duyulabilir aralık)
     if (pitch < 0.5f) pitch = 0.5f;
     if (pitch > 2.0f) pitch = 2.0f;
 
     return pitch;
 }
 
-
+/////////////////////////////////////////////////////////
+//                    Ana Fonksiyon                    //
+/////////////////////////////////////////////////////////
 int main() {
-    // Pencere oluştur
+    // Pencere oluştur (800x600 boyutunda)
     sf::RenderWindow window(sf::VideoMode(800, 600), "Doppler Effect Simulation");
-    window.setFramerateLimit(60);
+    window.setFramerateLimit(60); // Sabit FPS ile çalıştır
 
-    // Font yükle
+    // Yazı tipi yükle (hata olursa çık)
     sf::Font font;
-    if (!font.loadFromFile("C:\\Users\\halil\\Documents\\My Documents\\Job\\My studies\\C++\\spatial_audio\\x64\\Debug\\resources\\tuffy.ttf")) {
+    if (!font.loadFromFile("C:/Users/halil/Documents/GitHub/Spatial-Audio/src/x64/Debug/resources/tuffy.ttf")) {
         return EXIT_FAILURE;
     }
 
-    // Bilgi metni
+    // Ekrandaki bilgi metni ayarları
     sf::Text infoText;
     infoText.setFont(font);
     infoText.setCharacterSize(20);
     infoText.setFillColor(sf::Color::Black);
     infoText.setPosition(10, 10);
 
-    // Uçak oluştur
-    Airplane airplane(-100, 300);
+    // Uçak nesnesi oluştur
+    Airplane airplane(-100, 300); // Ekranın sol dışından başlat
 
-    // Dinleyici pozisyonu (ekranın ortası)
+    // Dinleyici ekranın ortasında sabit durur
     sf::Vector2f listenerPosition(400, 300);
 
-    // Uçak sesi yükle
+    // Uçak sesini yükle (hata olursa çık)
     sf::SoundBuffer buffer;
-    if (!buffer.loadFromFile("C:\\Users\\halil\\Documents\\My Documents\\Job\\My studies\\C++\\spatial_audio\\x64\\Debug\\resources\\aygaz_music.ogg")) {
+    if (!buffer.loadFromFile("C:/Users/halil/Documents/GitHub/Spatial-Audio/src/x64/Debug/resources/aygaz_music.ogg")) {
         return EXIT_FAILURE;
     }
 
+    // Ses nesnesini başlat ve döngüye sok
     sf::Sound sound;
     sound.setBuffer(buffer);
     sound.setLoop(true);
     sound.play();
 
-    // Slider için parametreler
-    sf::RectangleShape sliderBar(sf::Vector2f(200, 10)); // Kaydırıcı bar
+    ///////////////////////////////////////////////////////
+    //                  Slider Arayüzü                   //
+    ///////////////////////////////////////////////////////
+    // Hızı kontrol eden bir kaydırıcı bar ve başlık
+    sf::RectangleShape sliderBar(sf::Vector2f(200, 10));
     sliderBar.setFillColor(sf::Color::Black);
-    sliderBar.setPosition(300, 500); // Slider'ın yeri
+    sliderBar.setPosition(300, 500); // Bar ekranın altına yerleştirilmiş
 
-    sf::CircleShape sliderThumb(10); // Kaydırıcı başlığı
+    sf::CircleShape sliderThumb(10);
     sliderThumb.setFillColor(sf::Color::Green);
-    sliderThumb.setPosition(airplane.speed * 2.0f + 300 - 10, 495); // Başlangıç yeri
+    sliderThumb.setPosition(airplane.speed * 2.0f + 300 - 10, 495); // Başlangıç pozisyonu (slider'a göre)
 
-    // Ana döngü
+    ///////////////////////////////////////////////////////
+    //                  Oyun Döngüsü                      //
+    ///////////////////////////////////////////////////////
     while (window.isOpen()) {
-        // Olayları işle
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window.close();
 
-            // Slider'ı hareket ettirmek için mouse olaylarını dinle
+            // Slider başlığına tıklama ve hareket etme işlemleri
             if (event.type == sf::Event::MouseButtonPressed) {
                 if (sliderThumb.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
-                    // Slider başlığına tıklanmışsa, kaydırıcıyı takip et
                     sliderThumb.setPosition(event.mouseButton.x - sliderThumb.getRadius(), 495);
                 }
             }
             if (event.type == sf::Event::MouseMoved) {
                 if (event.mouseMove.x >= 300 && event.mouseMove.x <= 500) {
-                    // Mouse hareketi ile slider başlığını güncelle
                     sliderThumb.setPosition(event.mouseMove.x - sliderThumb.getRadius(), 495);
                 }
             }
         }
 
-        // Uçağın hızını slider'dan alalım
-        airplane.speed = (sliderThumb.getPosition().x - 300) / 2.0f; // Slider'daki pozisyona göre hız
+        ///////////////////////////////////////////////////////
+        //           Fiziksel Hesaplamalar ve Güncellemeler  //
+        ///////////////////////////////////////////////////////
 
-        // Uçağı güncelle
-        float deltaTime = 1.0f / 60.0f; // 60 FPS varsayımı
+        // Slider pozisyonuna göre uçağın hızını güncelle
+        airplane.speed = (sliderThumb.getPosition().x - 300) / 2.0f;
+
+        // DeltaTime sabit (60 FPS varsayımı)
+        float deltaTime = 1.0f / 60.0f;
         airplane.update(deltaTime);
 
-        // Mesafe hesapla
+        // Dinleyici ile uçak arasındaki mesafeyi hesapla (2D mesafe)
         float distance = std::sqrt(
             std::pow(airplane.position.x - listenerPosition.x, 2) +
             std::pow(airplane.position.y - listenerPosition.y, 2)
         );
 
-        // Ses seviyesi hesapla
+        // Uzaklığa göre ses seviyesi (logaritmik değil, doğrusal)
         float volume = 100.0f - (distance / 5.0f);
         if (volume < 0) volume = 0;
         if (volume > 100) volume = 100;
         sound.setVolume(volume);
 
-        // Doppler efekti için pitch hesapla
+        // Doppler pitch hesapla ve uygula
         float pitch = calculateDopplerPitch(airplane.position, airplane.velocity, airplane.speed, listenerPosition);
         sound.setPitch(pitch);
-
 
         // Bilgi metnini güncelle
         std::stringstream ss;
@@ -161,29 +180,31 @@ int main() {
         ss << "Speed: " << (int)airplane.speed;
         infoText.setString(ss.str());
 
-        // Ekranı temizle
-        window.clear(sf::Color::White);
+        ///////////////////////////////////////////////////////
+        //                  Ekran Çizimleri                  //
+        ///////////////////////////////////////////////////////
+        window.clear(sf::Color::White); // Arka planı beyaz yap
 
-        // Uçağı çiz
+        // Uçak (kırmızı daire)
         sf::CircleShape airplaneShape(10);
         airplaneShape.setFillColor(sf::Color::Red);
         airplaneShape.setPosition(airplane.position);
         window.draw(airplaneShape);
 
-        // Dinleyiciyi çiz
+        // Dinleyici (mavi küçük daire)
         sf::CircleShape listenerShape(5);
         listenerShape.setFillColor(sf::Color::Blue);
         listenerShape.setPosition(listenerPosition);
         window.draw(listenerShape);
 
-        // Slider bar'ı ve başlığını çiz
+        // Slider bileşenleri
         window.draw(sliderBar);
         window.draw(sliderThumb);
 
-        // Bilgi metnini çiz
+        // Bilgi metni
         window.draw(infoText);
 
-        // Ekranı göster
+        // Ekranı güncelle
         window.display();
     }
 
